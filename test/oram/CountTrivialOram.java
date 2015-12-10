@@ -1,6 +1,9 @@
 package oram;
 
 import org.junit.Test;
+import java.io.PrintWriter;
+import java.io.FileWriter;
+import java.io.File;
 
 import util.Utils;
 import flexsc.CompEnv;
@@ -13,15 +16,23 @@ public class CountTrivialOram {
 
 	static int newN = 1024*2;
 	public  static void main(String args[]) throws Exception {
-		for(int i = 5; i <=10 ; i++) {
-			GenRunnable gen = new GenRunnable(12345, i, 3, 32, 4, 8);
-			EvaRunnable eva = new EvaRunnable("localhost", 12345);
-			Thread tGen = new Thread(gen);
-			Thread tEva = new Thread(eva);
-			tGen.start();
-			Thread.sleep(10);
-			tEva.start();
-			tGen.join();
+		//deleting data results file if alread exits
+		File f = new File("AndGateResults/trivialAndGateResults.txt");
+		f.delete();
+		try {
+			for(int i = 2; i <=Integer.parseInt(args[0]); i++) {
+				GenRunnable gen = new GenRunnable(12345, i, 3, 32, 4, 8);
+				EvaRunnable eva = new EvaRunnable("localhost", 12345);
+				Thread tGen = new Thread(gen);
+				Thread tEva = new Thread(eva);
+				tGen.start();
+				Thread.sleep(10);
+				tEva.start();
+				tGen.join();
+			}
+		}
+		catch (Exception e) {
+			System.out.println("N-value must be valid Int");
 		}
 	}
 	
@@ -86,6 +97,8 @@ public class CountTrivialOram {
 				LinearScanOram<Boolean> client = new LinearScanOram<Boolean>(
 						env, N, dataSize);
 
+				//write results to doc -> peaky
+				PrintWriter writer = new PrintWriter(new FileWriter("AndGateResults/trivialAndGateResults.txt", true));
 				for (int i = 0; i < writeCount; ++i) {
 					int element = i % N;
 
@@ -97,6 +110,9 @@ public class CountTrivialOram {
 					((PMCompEnv)env).statistic.flush();
 					client.write(client.lib.toSignals(element), scData);
 					System.out.println(logN+"\t"+((PMCompEnv)env).statistic.andGate);
+					//Write to file -> Peaky
+					writer.println(logN+" "+((PMCompEnv)env).statistic.andGate);
+
 //					double t = Flag.sw.stopTotal();
 //					System.out.println(Flag.sw.ands + " " + t / 1000000000.0
 //							+ " " + Flag.sw.ands / t * 1000);
@@ -106,6 +122,8 @@ public class CountTrivialOram {
 //					double usedMB = (rt.totalMemory() - rt.freeMemory()) / 1024.0 / 1024.0;
 //					System.out.println("mem: " + usedMB);
 				}
+				writer.close();
+
 
 				for (int i = 0; i < readCount; ++i) {
 					int element = i % N;
